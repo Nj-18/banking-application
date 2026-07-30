@@ -11,8 +11,10 @@ import com.banking.demo.repositories.BankAccountRepository;
 import com.banking.demo.repositories.TransactionRepository;
 import com.banking.demo.services.TransactionService;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,7 +32,11 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public List<TransactionResponseDTO> getTransactions(String accountNumber) {
+    public List<TransactionResponseDTO> getTransactions(
+            String accountNumber,
+            LocalDateTime fromDate,
+            LocalDateTime toDate,
+            String sort) {
 
         BankAccount account = bankAccountRepository
                 .findByAccountNumber(accountNumber)
@@ -39,18 +45,41 @@ public class TransactionServiceImpl implements TransactionService {
                                 "Account not found with account number : "
                                         + accountNumber));
 
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new InvalidDateRangeException(
+                    "fromDate must be before or equal to toDate.");
+        }
+
+        Sort sortOrder = resolveSort(sort);
+
         List<Transaction> transactions =
-                transactionRepository.findByBankAccount(account);
+                transactionRepository.findByBankAccountAndDateRange(
+                        account, fromDate, toDate, sortOrder);
 
         return transactions.stream()
                 .map(TransactionMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
+    private Sort resolveSort(String sort) {
+        if (sort == null || sort.isBlank() || sort.equalsIgnoreCase("desc")) {
+            return Sort.by(Sort.Direction.DESC, "transactionDate");
+        }
+
+        if (sort.equalsIgnoreCase("asc")) {
+            return Sort.by(Sort.Direction.ASC, "transactionDate");
+        }
+
+        throw new InvalidSortException(
+                "Invalid sort value. Allowed values are 'asc' or 'desc'.");
+    }
+
     @Override
     public void saveTransaction(BankAccount account, String transactionReference, String transactionType, Double amount, String remarks) {
 
-    }@Override
+    }
+
+    @Override
     @Transactional
     public TransferResponseDTO transferMoney(TransferRequestDTO request) {
 
