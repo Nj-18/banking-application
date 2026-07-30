@@ -1,5 +1,6 @@
 package com.banking.demo.serviceImpl;
 
+import com.banking.demo.dtos.StatementResponseDTO;
 import com.banking.demo.dtos.TransactionResponseDTO;
 import com.banking.demo.dtos.TransferRequestDTO;
 import com.banking.demo.dtos.TransferResponseDTO;
@@ -11,8 +12,15 @@ import com.banking.demo.repositories.BankAccountRepository;
 import com.banking.demo.repositories.TransactionRepository;
 import com.banking.demo.services.TransactionService;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,8 +57,20 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public void saveTransaction(BankAccount account, String transactionReference, String transactionType, Double amount, String remarks) {
+        Transaction transaction = new Transaction();
 
-    }@Override
+        transaction.setTransactionReference(transactionReference);
+        transaction.setTransactionType(transactionType);
+        transaction.setAmount(amount);
+        transaction.setRemarks(remarks);
+        transaction.setStatus("SUCCESS");
+        transaction.setTransactionDate(LocalDateTime.now());
+        transaction.setBankAccount(account);
+
+        transactionRepository.save(transaction);
+    }
+
+    @Override
     @Transactional
     public TransferResponseDTO transferMoney(TransferRequestDTO request) {
 
@@ -128,6 +148,37 @@ public class TransactionServiceImpl implements TransactionService {
         response.setMessage("Money transferred successfully.");
 
         return response;
+    }
+
+    @Override
+    public StatementResponseDTO getStatement(String accountNumber, LocalDate fromDate, LocalDate toDate, int page, int size) {
+
+        BankAccount account = bankAccountRepository
+                .findByAccountNumber(accountNumber)
+                .orElseThrow(() ->
+                        new AccountNotFoundException(
+                                "Account not found with account number : "
+                                        + accountNumber));
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("transactionDate").descending());
+
+        Page<Transaction> transactions = transactionRepository.findByBankAccountAndTransactionDateBetween(account, fromDate.atStartOfDay(), toDate.atTime(LocalTime.MAX), pageable);
+
+        List<TransactionResponseDTO> transactionDTOs =
+                transactions.getContent()
+                        .stream()
+                        .map(TransactionMapper::toDTO)
+                        .collect(Collectors.toList());
+
+        StatementResponseDTO responseDTO = new StatementResponseDTO();
+
+        responseDTO.setAccountNumber(account.getAccountNumber());
+        responseDTO.setCurrentBalance(account.getBalance());
+        responseDTO.setTransactions(transactionDTOs);
+
+        return responseDTO;
     }
 
 
