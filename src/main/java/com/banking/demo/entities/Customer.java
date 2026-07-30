@@ -30,4 +30,7 @@ public class Customer {
     @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
     private List<BankAccount> bankAccounts;
 
+    @OneToOne(mappedBy = "customer")
+    private User user;
+
 }
