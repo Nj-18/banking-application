@@ -6,11 +6,16 @@ import com.banking.demo.dtos.TransferResponseDTO;
 import com.banking.demo.entities.BankAccount;
 import jakarta.transaction.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TransactionService {
 
-    List<TransactionResponseDTO> getTransactions(String accountNumber);
+    List<TransactionResponseDTO> getTransactions(
+            String accountNumber,
+            LocalDateTime fromDate,
+            LocalDateTime toDate,
+            String sort);
 
     void saveTransaction(
             BankAccount account,
