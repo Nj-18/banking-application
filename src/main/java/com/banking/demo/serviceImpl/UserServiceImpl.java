@@ -1,18 +1,20 @@
 package com.banking.demo.serviceImpl;
 
+import com.banking.demo.dtos.LoginRequestDTO;
+import com.banking.demo.dtos.LoginResponseDTO;
 import com.banking.demo.enums.Role;
 import com.banking.demo.dtos.RegisterUserRequestDTO;
 import com.banking.demo.dtos.RegisterUserResponseDTO;
 import com.banking.demo.entities.Customer;
 import com.banking.demo.entities.User;
-import com.banking.demo.exceptions.CustomerNotFoundException;
-import com.banking.demo.exceptions.EmailAlreadyExistsException;
-import com.banking.demo.exceptions.UsernameAlreadyExistsException;
+import com.banking.demo.exceptions.*;
 import com.banking.demo.repositories.CustomerRepository;
 import com.banking.demo.repositories.UserRepository;
 import com.banking.demo.services.UserService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.banking.demo.security.JwtService;
 
 import java.time.LocalDateTime;
 
@@ -22,13 +24,16 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+
 
     public UserServiceImpl(UserRepository userRepository,
                            CustomerRepository customerRepository,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -79,5 +84,49 @@ public class UserServiceImpl implements UserService {
         response.setMessage("User registered successfully.");
 
         return response;
+    }
+
+    @Override
+    public LoginResponseDTO login(LoginRequestDTO request)
+            throws InvalidCredentialsException, UserNotEnabledException {
+
+        // 1. Find User by Username
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found"));
+
+        // 2. Check if user is enabled
+        if (!user.getEnabled()) {
+            throw new UserNotEnabledException("User is not enabled.");
+        }
+
+        // 3. Verify Password
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException(
+                    "Invalid username or password.");
+        }
+
+        // 4. Generate JWT Token
+        String token = jwtService.generateToken(user);
+
+        // ---------- TEMPORARY TESTING ----------
+        System.out.println("====================================");
+        System.out.println("Generated Token : " + token);
+        System.out.println("Username : " + jwtService.extractUsername(token));
+        System.out.println("Expiration : " + jwtService.extractExpiration(token));
+        System.out.println("Is Token Valid : " + jwtService.isTokenValid(token, user));
+        System.out.println("====================================");
+        // ---------------------------------------
+
+        // 5. Prepare Response
+        LoginResponseDTO dto = new LoginResponseDTO();
+
+        dto.setAuthenticated(true);
+        dto.setUsername(user.getUsername());
+        dto.setRole(user.getRole().name());
+        dto.setToken(token);
+        dto.setMessage("User logged in successfully.");
+
+        return dto;
     }
 }

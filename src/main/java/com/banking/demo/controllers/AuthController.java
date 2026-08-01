@@ -1,5 +1,7 @@
 package com.banking.demo.controllers;
 
+import com.banking.demo.dtos.LoginRequestDTO;
+import com.banking.demo.dtos.LoginResponseDTO;
 import com.banking.demo.dtos.RegisterUserRequestDTO;
 import com.banking.demo.dtos.RegisterUserResponseDTO;
 import com.banking.demo.services.UserService;
@@ -22,6 +24,12 @@ public class AuthController {
     public RegisterUserResponseDTO register(@RequestBody RegisterUserRequestDTO dto)
     {
        return userService.registerUser(dto);
+    }
+
+    @PostMapping("/login")
+    public LoginResponseDTO login(@RequestBody LoginRequestDTO dto)
+    {
+        return userService.login(dto);
     }
 
 
