@@ -10,7 +10,9 @@ import com.banking.demo.entities.User;
 import com.banking.demo.exceptions.*;
 import com.banking.demo.repositories.CustomerRepository;
 import com.banking.demo.repositories.UserRepository;
+import com.banking.demo.security.CustomUserDetailsService;
 import com.banking.demo.services.UserService;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,15 +27,18 @@ public class UserServiceImpl implements UserService {
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final CustomUserDetailsService customUserDetailsService;
+
 
 
     public UserServiceImpl(UserRepository userRepository,
                            CustomerRepository customerRepository,
-                           PasswordEncoder passwordEncoder, JwtService jwtService) {
+                           PasswordEncoder passwordEncoder, JwtService jwtService, CustomUserDetailsService customUserDetailsService) {
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Override
@@ -109,12 +114,15 @@ public class UserServiceImpl implements UserService {
         // 4. Generate JWT Token
         String token = jwtService.generateToken(user);
 
+        // Load UserDetails
+        UserDetails userDetails =
+                customUserDetailsService.loadUserByUsername(user.getUsername());
         // ---------- TEMPORARY TESTING ----------
         System.out.println("====================================");
         System.out.println("Generated Token : " + token);
         System.out.println("Username : " + jwtService.extractUsername(token));
         System.out.println("Expiration : " + jwtService.extractExpiration(token));
-        System.out.println("Is Token Valid : " + jwtService.isTokenValid(token, user));
+        System.out.println("Is Token Valid : " + jwtService.isTokenValid(token,userDetails));
         System.out.println("====================================");
         // ---------------------------------------
 
