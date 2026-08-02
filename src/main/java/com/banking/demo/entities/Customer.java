@@ -1,5 +1,7 @@
 package com.banking.demo.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +13,7 @@ import java.util.List;
 
 @Entity
 @Table(name="customers")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Customer {
 
     @Id
@@ -27,10 +30,12 @@ public class Customer {
 
     private String customerStatus;
 
-    @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "customer", fetch = FetchType.EAGER)
+    @JsonIgnoreProperties({"customer", "transactions"})
     private List<BankAccount> bankAccounts;
 
     @OneToOne(mappedBy = "customer")
+    @JsonIgnore
     private User user;
 
 }

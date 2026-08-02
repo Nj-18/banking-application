@@ -1,0 +1,26 @@
+<div class="shell">
+  <aside class="rail">
+    <div class="rail__brand">
+      <span class="mark"></span>
+      <div>
+        <strong>Northline</strong>
+        <small>Personal banking</small>
+      </div>
+    </div>
+
+    <nav>
+      <a routerLink="/app" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Accounts</a>
+      <a routerLink="/app/move" routerLinkActive="active">Move money</a>
+      <a routerLink="/app/activity" routerLinkActive="active">Activity</a>
+    </nav>
+
+    <div class="rail__foot">
+      <p>{{ auth.user()?.username }}</p>
+      <button class="btn btn-ghost" type="button" (click)="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="workspace">
+    <router-outlet />
+  </main>
+</div>

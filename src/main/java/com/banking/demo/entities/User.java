@@ -1,6 +1,7 @@
 package com.banking.demo.entities;
 
 import com.banking.demo.enums.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +17,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String username;
+    @JsonIgnore
     private String password;
     private String email;
     @Enumerated(EnumType.STRING)

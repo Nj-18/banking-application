@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.banking.demo.security.JwtService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -42,7 +43,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public RegisterUserResponseDTO registerUser(RegisterUserRequestDTO request) {
+
+        if (request.getUsername() == null || request.getUsername().isBlank()) {
+            throw new IllegalArgumentException("Username is required.");
+        }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password is required.");
+        }
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email is required.");
+        }
 
         // Check username
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
@@ -56,12 +68,7 @@ public class UserServiceImpl implements UserService {
                     "Email already exists : " + request.getEmail());
         }
 
-        // Find customer
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() ->
-                        new CustomerNotFoundException(
-                                "Customer not found with id : "
-                                        + request.getCustomerId()));
+        Customer customer = resolveCustomer(request);
 
         // Create User
         User user = new User();
@@ -91,6 +98,31 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
+    private Customer resolveCustomer(RegisterUserRequestDTO request) {
+        if (request.getCustomerId() != null) {
+            return customerRepository.findById(request.getCustomerId())
+                    .orElseThrow(() ->
+                            new CustomerNotFoundException(
+                                    "Customer not found with id : "
+                                            + request.getCustomerId()));
+        }
+
+        if (request.getFirstName() == null || request.getFirstName().isBlank()
+                || request.getLastName() == null || request.getLastName().isBlank()
+                || request.getMobileNumber() == null || request.getMobileNumber().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Provide customerId or firstName, lastName, and mobileNumber.");
+        }
+
+        Customer customer = new Customer();
+        customer.setFirstName(request.getFirstName().trim());
+        customer.setLastName(request.getLastName().trim());
+        customer.setEmail(request.getEmail().trim());
+        customer.setMobileNumber(request.getMobileNumber().trim());
+        customer.setCustomerStatus("ACTIVE");
+        return customerRepository.save(customer);
+    }
+
     @Override
     public LoginResponseDTO login(LoginRequestDTO request)
             throws InvalidCredentialsException, UserNotEnabledException {
@@ -98,7 +130,7 @@ public class UserServiceImpl implements UserService {
         // 1. Find User by Username
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found"));
+                        new InvalidCredentialsException("Invalid username or password."));
 
         // 2. Check if user is enabled
         if (!user.getEnabled()) {
@@ -134,6 +166,7 @@ public class UserServiceImpl implements UserService {
         dto.setRole(user.getRole().name());
         dto.setToken(token);
         dto.setMessage("User logged in successfully.");
+        dto.setCustomerId(user.getCustomer() != null ? user.getCustomer().getId() : null);
 
         return dto;
     }

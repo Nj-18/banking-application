@@ -1,6 +1,6 @@
 # Banking Application
 
-A production-grade banking application built using Spring Boot.
+A production-grade banking application built using Spring Boot and Angular.
 
 ## Features
 
@@ -10,6 +10,8 @@ A production-grade banking application built using Spring Boot.
 - Withdraw Money
 - Transfer Money
 - Transaction History
+- JWT Authentication
+- Angular frontend (Northline)
 - Global Exception Handling
 - DTO & Mapper Pattern
 - Spring Data JPA
@@ -21,13 +23,34 @@ A production-grade banking application built using Spring Boot.
 - Spring Boot
 - Spring Data JPA
 - Hibernate
+- Spring Security + JWT
 - MySQL
 - Maven
 - Lombok
+- Angular 19
+
+## Run locally
+
+### Backend
+
+```bash
+./mvnw spring-boot:run
+```
+
+API base: `http://localhost:8080`
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+UI: `http://localhost:4200` (proxies `/api` to the backend)
 
 ## Future Enhancements
 
-- JWT Authentication
 - Redis
 - Kafka
 - Docker
