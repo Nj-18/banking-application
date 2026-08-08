@@ -1,0 +1,119 @@
+.auth-hero {
+  min-height: 100vh;
+  position: relative;
+  display: grid;
+  align-items: end;
+  color: white;
+  overflow: hidden;
+}
+
+.auth-hero__media {
+  position: absolute;
+  inset: 0;
+}
+
+.auth-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.04);
+  animation: drift 18s ease-in-out infinite alternate;
+}
+
+.auth-hero__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(6, 21, 34, 0.25) 0%, rgba(6, 21, 34, 0.55) 42%, rgba(6, 21, 34, 0.88) 100%),
+    linear-gradient(90deg, rgba(11, 82, 76, 0.35), transparent 55%);
+}
+
+.auth-hero__content {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100% - 2.5rem));
+  margin: 0 0 8vh 6vw;
+  animation: rise 700ms ease both;
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 7vw, 4.6rem);
+  line-height: 0.95;
+  margin-bottom: 0.75rem;
+}
+
+.auth-hero__content h1 {
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 0.65rem;
+}
+
+.lede {
+  max-width: 34ch;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 1.6rem;
+  line-height: 1.55;
+}
+
+.auth-panel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.25rem;
+  border-radius: 22px;
+  background: rgba(247, 251, 252, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+  animation: rise 900ms ease both;
+}
+
+.auth-panel .field label {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.auth-panel .field input {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.switch {
+  font-size: 0.95rem;
+}
+
+.switch a {
+  color: #f0d9a0;
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+@keyframes drift {
+  from {
+    transform: scale(1.04) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.08) translate3d(-1.5%, -1%, 0);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .auth-hero__content {
+    margin: 0 auto 5vh;
+    width: min(560px, calc(100% - 1.5rem));
+  }
+
+  .brand {
+    font-size: clamp(2.4rem, 12vw, 3.4rem);
+  }
+}

@@ -1,0 +1,39 @@
+<section class="auth-hero">
+  <div class="auth-hero__media" aria-hidden="true">
+    <img
+      src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1800&q=80"
+      alt=""
+    />
+    <div class="auth-hero__veil"></div>
+  </div>
+
+  <div class="auth-hero__content">
+    <p class="brand">Northline</p>
+    <h1>Banking that feels steady.</h1>
+    <p class="lede">Sign in to move money, open accounts, and follow every transaction with clarity.</p>
+
+    <form class="auth-panel" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" formControlName="username" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" autocomplete="current-password" />
+      </div>
+
+      @if (error) {
+        <div class="alert alert-error">{{ error }}</div>
+      }
+
+      <button class="btn btn-primary" type="submit" [disabled]="loading">
+        {{ loading ? 'Signing in…' : 'Sign in' }}
+      </button>
+
+      <p class="switch muted">
+        New here?
+        <a routerLink="/register">Open an account</a>
+      </p>
+    </form>
+  </div>
+</section>

@@ -1,0 +1,17 @@
+@use '../login/login.component.scss';
+
+.register .auth-hero__content {
+  width: min(640px, calc(100% - 2.5rem));
+}
+
+.grid-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .grid-two {
+    grid-template-columns: 1fr;
+  }
+}

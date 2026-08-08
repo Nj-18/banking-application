@@ -1,0 +1,65 @@
+<section class="auth-hero register">
+  <div class="auth-hero__media" aria-hidden="true">
+    <img
+      src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1800&q=80"
+      alt=""
+    />
+    <div class="auth-hero__veil"></div>
+  </div>
+
+  <div class="auth-hero__content">
+    <p class="brand">Northline</p>
+    <h1>Open your account in one pass.</h1>
+    <p class="lede">We’ll create your customer profile and login together — then you can start banking immediately.</p>
+
+    <form class="auth-panel" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="grid-two">
+        <div class="field">
+          <label for="firstName">First name</label>
+          <input id="firstName" formControlName="firstName" />
+        </div>
+        <div class="field">
+          <label for="lastName">Last name</label>
+          <input id="lastName" formControlName="lastName" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" autocomplete="email" />
+      </div>
+
+      <div class="field">
+        <label for="mobileNumber">Mobile</label>
+        <input id="mobileNumber" formControlName="mobileNumber" autocomplete="tel" />
+      </div>
+
+      <div class="grid-two">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" formControlName="username" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" formControlName="password" autocomplete="new-password" />
+        </div>
+      </div>
+
+      @if (error) {
+        <div class="alert alert-error">{{ error }}</div>
+      }
+      @if (success) {
+        <div class="alert alert-success">{{ success }}</div>
+      }
+
+      <button class="btn btn-primary" type="submit" [disabled]="loading">
+        {{ loading ? 'Creating…' : 'Create account' }}
+      </button>
+
+      <p class="switch muted">
+        Already banking with us?
+        <a routerLink="/login">Sign in</a>
+      </p>
+    </form>
+  </div>
+</section>

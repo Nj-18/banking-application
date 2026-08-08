@@ -1,0 +1,60 @@
+<section class="page">
+  <header>
+    <p class="eyebrow">Activity</p>
+    <h1>Statement</h1>
+    <p class="muted">Review deposits, withdrawals, and transfers for a date range.</p>
+  </header>
+
+  <form class="filters" [formGroup]="form" (ngSubmit)="load()">
+    <div class="field">
+      <label for="accountNumber">Account</label>
+      <select id="accountNumber" formControlName="accountNumber">
+        @for (account of accounts(); track account.id) {
+          <option [value]="account.accountNumber">
+            {{ account.accountNumber }} · {{ account.accountType }}
+          </option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label for="fromDate">From</label>
+      <input id="fromDate" type="date" formControlName="fromDate" />
+    </div>
+    <div class="field">
+      <label for="toDate">To</label>
+      <input id="toDate" type="date" formControlName="toDate" />
+    </div>
+    <button class="btn btn-primary" type="submit" [disabled]="loading()">
+      {{ loading() ? 'Loading…' : 'Refresh' }}
+    </button>
+  </form>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (balance() !== null) {
+    <p class="balance muted">
+      Current balance:
+      <strong>{{ balance() | currency: 'INR' : 'symbol' : '1.2-2' }}</strong>
+    </p>
+  }
+
+  <div class="tx-list">
+    @for (tx of transactions(); track tx.transactionReference + tx.transactionType + tx.transactionDate) {
+      <article class="tx-row">
+        <div>
+          <h2>{{ tx.transactionType }}</h2>
+          <p class="muted">
+            {{ tx.transactionReference }} ·
+            {{ tx.transactionDate | date: 'medium' }} ·
+            {{ tx.status }}
+          </p>
+        </div>
+        <strong>{{ tx.amount | currency: 'INR' : 'symbol' : '1.2-2' }}</strong>
+      </article>
+    } @empty {
+      <p class="muted">No transactions in this range.</p>
+    }
+  </div>
+</section>
