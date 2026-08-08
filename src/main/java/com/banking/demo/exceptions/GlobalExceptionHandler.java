@@ -34,6 +34,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(AccountInactiveException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAccountInactive(
+            AccountInactiveException ex,
+            HttpServletRequest request) {
+
+        ErrorResponseDTO response = buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage(),
+                request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(UsernameAlreadyExistsException.class)
     public ResponseEntity<ErrorResponseDTO> handleUsernameAlreadyExists(
             UsernameAlreadyExistsException ex,

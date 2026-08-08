@@ -74,25 +74,38 @@ public class TransactionServiceImpl implements TransactionService {
     @Transactional
     public TransferResponseDTO transferMoney(TransferRequestDTO request) {
 
-        if (request.getFromAccountNumber().equals(request.getToAccountNumber())) {
+        if (request.getFromAccountNumber() == null || request.getToAccountNumber() == null) {
+            throw new IllegalArgumentException("From and to account numbers are required.");
+        }
+
+        String fromAccountNumber = request.getFromAccountNumber().trim();
+        String toAccountNumber = request.getToAccountNumber().trim();
+
+        if (fromAccountNumber.isEmpty() || toAccountNumber.isEmpty()) {
+            throw new IllegalArgumentException("From and to account numbers are required.");
+        }
+
+        if (fromAccountNumber.equalsIgnoreCase(toAccountNumber)) {
             throw new SameAccountTransferException(
                     "Transfer between the same account is not allowed.");
         }
 
-        if (request.getAmount() <= 0) {
+        if (request.getAmount() == null || request.getAmount() <= 0) {
             throw new InvalidAmountException(
                     "Transfer amount must be greater than zero.");
         }
 
         BankAccount sender = bankAccountRepository
-                .findByAccountNumber(request.getFromAccountNumber())
+                .findByAccountNumber(fromAccountNumber)
                 .orElseThrow(() ->
-                        new AccountNotFoundException("Sender account not found."));
+                        new AccountNotFoundException(
+                                "Sender account not found: " + fromAccountNumber));
 
         BankAccount receiver = bankAccountRepository
-                .findByAccountNumber(request.getToAccountNumber())
+                .findByAccountNumber(toAccountNumber)
                 .orElseThrow(() ->
-                        new AccountNotFoundException("Receiver account not found."));
+                        new AccountNotFoundException(
+                                "Receiver account not found: " + toAccountNumber));
 
         if (!sender.getAccountStatus().equalsIgnoreCase("ACTIVE")) {
             throw new AccountInactiveException(
@@ -106,7 +119,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         if (sender.getBalance() < request.getAmount()) {
             throw new InsufficientBalanceException(
-                    "Insufficient balance.");
+                    "Insufficient balance. Available balance is ₹" + sender.getBalance());
         }
 
         // Update balances
@@ -119,22 +132,27 @@ public class TransactionServiceImpl implements TransactionService {
 
         // Common transaction reference
         String transactionReference = "TXN" + System.currentTimeMillis();
+        String remarks = request.getRemarks() == null || request.getRemarks().isBlank()
+                ? "Transfer"
+                : request.getRemarks().trim();
 
         // Save sender transaction
-        saveTransaction(
+        saveTransferTransaction(
                 sender,
                 transactionReference,
                 "TRANSFER_DEBIT",
                 request.getAmount(),
-                request.getRemarks());
+                sender.getBalance(),
+                remarks);
 
         // Save receiver transaction
-        saveTransaction(
+        saveTransferTransaction(
                 receiver,
                 transactionReference,
                 "TRANSFER_CREDIT",
                 request.getAmount(),
-                request.getRemarks());
+                receiver.getBalance(),
+                remarks);
 
         // Prepare response
         TransferResponseDTO response = new TransferResponseDTO();
@@ -148,6 +166,26 @@ public class TransactionServiceImpl implements TransactionService {
         response.setMessage("Money transferred successfully.");
 
         return response;
+    }
+
+    private void saveTransferTransaction(
+            BankAccount account,
+            String transactionReference,
+            String transactionType,
+            Double amount,
+            Double balanceAfter,
+            String remarks) {
+
+        Transaction transaction = new Transaction();
+        transaction.setTransactionReference(transactionReference);
+        transaction.setTransactionType(transactionType);
+        transaction.setAmount(amount);
+        transaction.setBalanceAfterTransaction(balanceAfter);
+        transaction.setRemarks(remarks);
+        transaction.setStatus("SUCCESS");
+        transaction.setTransactionDate(LocalDateTime.now());
+        transaction.setBankAccount(account);
+        transactionRepository.save(transaction);
     }
 
     @Override
