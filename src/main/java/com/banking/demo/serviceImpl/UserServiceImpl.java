@@ -57,12 +57,15 @@ public class UserServiceImpl implements UserService {
         }
 
         // Find customer
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() ->
-                        new CustomerNotFoundException(
-                                "Customer not found with id : "
-                                        + request.getCustomerId()));
+        Customer customer = new Customer();
 
+        customer.setFirstName(request.getFirstName());
+        customer.setLastName(request.getLastName());
+        customer.setEmail(request.getEmail());
+        customer.setMobileNumber(request.getMobileNumber());
+        customer.setCustomerStatus("ACTIVE");
+
+        Customer savedCustomer = customerRepository.save(customer);
         // Create User
         User user = new User();
 
@@ -134,7 +137,7 @@ public class UserServiceImpl implements UserService {
         dto.setRole(user.getRole().name());
         dto.setToken(token);
         dto.setMessage("User logged in successfully.");
-
+        dto.setCustomerId(user.getCustomer().getId());
         return dto;
     }
 }

@@ -13,6 +13,7 @@ import com.banking.demo.repositories.CustomerRepository;
 import com.banking.demo.repositories.TransactionRepository;
 import com.banking.demo.services.BankAccountService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -51,6 +52,213 @@ private final CustomerRepository customerRepository;
         //bankAccount.setCustomer();
         //Customer customer = customerRepository.findById(request.getCustomerId())
                 // .orElseThrow(() -> new RuntimeException("Customer not found"));
+    }
+
+    @Transactional
+    @Override
+    public TransferResponseDTO transferMoney(TransferRequestDTO request) {
+
+        // 1. Validate amount
+        if (request.getAmount() == null || request.getAmount() <= 0) {
+            throw new InvalidAmountException(
+                    "Transfer amount must be greater than zero."
+            );
+        }
+
+        // 2. Validate account numbers
+        if (request.getFromAccountNumber() == null
+                || request.getToAccountNumber() == null) {
+
+            throw new RuntimeException(
+                    "From account and To account are required."
+            );
+        }
+
+        // 3. Prevent transfer to same account
+        if (request.getFromAccountNumber()
+                .equals(request.getToAccountNumber())) {
+
+            throw new RuntimeException(
+                    "Source and destination accounts cannot be the same."
+            );
+        }
+
+        // 4. Find sender
+        BankAccount sender = bankAccountRepository
+                .findByAccountNumber(request.getFromAccountNumber())
+                .orElseThrow(() ->
+                        new AccountNotFoundException(
+                                "Sender account not found: "
+                                        + request.getFromAccountNumber()
+                        )
+                );
+
+        // 5. Find receiver
+        BankAccount receiver = bankAccountRepository
+                .findByAccountNumber(request.getToAccountNumber())
+                .orElseThrow(() ->
+                        new AccountNotFoundException(
+                                "Receiver account not found: "
+                                        + request.getToAccountNumber()
+                        )
+                );
+
+        // 6. Check sender status
+        if (!"ACTIVE".equalsIgnoreCase(sender.getAccountStatus())) {
+            throw new RuntimeException(
+                    "Sender account is not active."
+            );
+        }
+
+        // 7. Check receiver status
+        if (!"ACTIVE".equalsIgnoreCase(receiver.getAccountStatus())) {
+            throw new RuntimeException(
+                    "Receiver account is not active."
+            );
+        }
+
+        // 8. Check balance
+        if (sender.getBalance() < request.getAmount()) {
+            throw new InsufficientBalanceException(
+                    "Insufficient balance. Available balance is ₹"
+                            + sender.getBalance()
+            );
+        }
+
+        // 9. Calculate new balances
+        Double senderNewBalance =
+                sender.getBalance() - request.getAmount();
+
+        Double receiverNewBalance =
+                receiver.getBalance() + request.getAmount();
+
+        // 10. Update balances
+        sender.setBalance(senderNewBalance);
+        receiver.setBalance(receiverNewBalance);
+
+        bankAccountRepository.save(sender);
+        bankAccountRepository.save(receiver);
+
+        // 11. Generate ONE transaction reference
+        String transactionReference =
+                "TXN" + System.currentTimeMillis();
+
+        // ==========================================
+        // 12. Sender transaction - DEBIT
+        // ==========================================
+
+        Transaction debitTransaction = new Transaction();
+
+        debitTransaction.setTransactionReference(
+                transactionReference
+        );
+
+        debitTransaction.setTransactionType(
+                "TRANSFER_DEBIT"
+        );
+
+        debitTransaction.setAmount(
+                request.getAmount()
+        );
+
+        debitTransaction.setBalanceAfterTransaction(
+                senderNewBalance
+        );
+
+        debitTransaction.setStatus(
+                "SUCCESS"
+        );
+
+        debitTransaction.setRemarks(
+                request.getRemarks()
+        );
+
+        debitTransaction.setTransactionDate(
+                LocalDateTime.now()
+        );
+
+        debitTransaction.setBankAccount(
+                sender
+        );
+
+        transactionRepository.save(debitTransaction);
+
+        // ==========================================
+        // 13. Receiver transaction - CREDIT
+        // ==========================================
+
+        Transaction creditTransaction = new Transaction();
+
+        creditTransaction.setTransactionReference(
+                transactionReference
+        );
+
+        creditTransaction.setTransactionType(
+                "TRANSFER_CREDIT"
+        );
+
+        creditTransaction.setAmount(
+                request.getAmount()
+        );
+
+        creditTransaction.setBalanceAfterTransaction(
+                receiverNewBalance
+        );
+
+        creditTransaction.setStatus(
+                "SUCCESS"
+        );
+
+        creditTransaction.setRemarks(
+                request.getRemarks()
+        );
+
+        creditTransaction.setTransactionDate(
+                LocalDateTime.now()
+        );
+
+        creditTransaction.setBankAccount(
+                receiver
+        );
+
+        transactionRepository.save(creditTransaction);
+
+        // ==========================================
+        // 14. Response
+        // ==========================================
+
+        TransferResponseDTO response =
+                new TransferResponseDTO();
+
+        response.setTransactionReference(
+                transactionReference
+        );
+
+        response.setFromAccount(
+                sender.getAccountNumber()
+        );
+
+        response.setToAccount(
+                receiver.getAccountNumber()
+        );
+
+        response.setAmount(
+                request.getAmount()
+        );
+
+        response.setSenderBalance(
+                senderNewBalance
+        );
+
+        response.setReceiverBalance(
+                receiverNewBalance
+        );
+
+        response.setMessage(
+                "Money transferred successfully."
+        );
+
+        return response;
     }
 
     @Override

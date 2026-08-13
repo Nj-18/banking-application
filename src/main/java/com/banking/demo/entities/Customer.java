@@ -1,5 +1,6 @@
 package com.banking.demo.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,6 +31,7 @@ public class Customer {
     @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
     private List<BankAccount> bankAccounts;
 
+    @JsonIgnore
     @OneToOne(mappedBy = "customer")
     private User user;
 

@@ -1,6 +1,7 @@
 package com.banking.demo.serviceImpl;
 
 import com.banking.demo.entities.Customer;
+import com.banking.demo.exceptions.CustomerNotFoundException;
 import com.banking.demo.repositories.CustomerRepository;
 import com.banking.demo.services.CustomerService;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,7 @@ class CustomerServiceImplTest {
     private CustomerServiceImpl customerServiceImpl;
 
     @Test
-    void saveCustomer() {
+    void saveCustomer_shouldReturnSavedCustomer() {
         // =========================
         // ARRANGE
         // =========================
@@ -56,7 +57,7 @@ class CustomerServiceImplTest {
     }
 
     @Test
-    void getAllCustomers() {
+    void getAllCustomers_shouldReturnCustomers() {
 
         // =========================
         // ARRANGE
@@ -103,7 +104,7 @@ class CustomerServiceImplTest {
     }
 
     @Test
-    void getCustomerById() {
+    void getAllCustomers_shouldReturnEmptyList_whenNoCustomers() {
 
         Customer customer = new Customer();
         customer.setId(1L);
@@ -121,4 +122,28 @@ class CustomerServiceImplTest {
                 .findById(1L);
 
     }
+
+    @Test
+    void getCustomerById_shouldThrowException_whenCustomerNotFound() {
+
+        // ARRANGE
+        Long customerId = 999L;
+
+        when(customerRepository.findById(customerId))
+                .thenReturn(Optional.empty());
+
+        // ACT + ASSERT
+        CustomerNotFoundException exception =
+                assertThrows(
+                        CustomerNotFoundException.class,
+                        () -> customerServiceImpl
+                                .getCustomerById(customerId)
+                );
+
+        // ASSERT
+        assertEquals(
+                "Customer not found with id : " + customerId,
+                exception.getMessage()
+        );
+        }
 }

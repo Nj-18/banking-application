@@ -6,6 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TransferRequestDTO {
+
     private String fromAccountNumber;
 
     private String toAccountNumber;

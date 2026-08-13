@@ -39,4 +39,11 @@ public class BankAccountController {
 
         return bankAccountService.withdrawMoney(request);
     }
+
+    @PostMapping("/transfer")
+    public TransferResponseDTO transferMoney(
+            @RequestBody TransferRequestDTO request) {
+
+        return bankAccountService.transferMoney(request);
+    }
 }

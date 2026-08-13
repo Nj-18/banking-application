@@ -1,5 +1,6 @@
 package com.banking.demo.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,6 +31,7 @@ public class Transaction {
     private LocalDateTime transactionDate;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "account_id")
     private BankAccount bankAccount;
 }
