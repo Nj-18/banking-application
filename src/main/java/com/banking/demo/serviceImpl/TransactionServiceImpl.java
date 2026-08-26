@@ -11,6 +11,10 @@ import com.banking.demo.mappers.TransactionMapper;
 import com.banking.demo.repositories.BankAccountRepository;
 import com.banking.demo.repositories.TransactionRepository;
 import com.banking.demo.services.TransactionService;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +42,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @CircuitBreaker(name = "transactionService")
+    @Retry(name = "readRetry")
     public List<TransactionResponseDTO> getTransactions(String accountNumber) {
 
         BankAccount account = bankAccountRepository
@@ -72,6 +78,9 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
+    @CircuitBreaker(name = "transactionService")
+    @RateLimiter(name = "moneyMovement")
+    @Bulkhead(name = "transferBulkhead")
     public TransferResponseDTO transferMoney(TransferRequestDTO request) {
 
         if (request.getFromAccountNumber() == null || request.getToAccountNumber() == null) {
@@ -122,21 +131,17 @@ public class TransactionServiceImpl implements TransactionService {
                     "Insufficient balance. Available balance is ₹" + sender.getBalance());
         }
 
-        // Update balances
         sender.setBalance(sender.getBalance() - request.getAmount());
         receiver.setBalance(receiver.getBalance() + request.getAmount());
 
-        // Save updated accounts
         bankAccountRepository.save(sender);
         bankAccountRepository.save(receiver);
 
-        // Common transaction reference
         String transactionReference = "TXN" + System.currentTimeMillis();
         String remarks = request.getRemarks() == null || request.getRemarks().isBlank()
                 ? "Transfer"
                 : request.getRemarks().trim();
 
-        // Save sender transaction
         saveTransferTransaction(
                 sender,
                 transactionReference,
@@ -145,7 +150,6 @@ public class TransactionServiceImpl implements TransactionService {
                 sender.getBalance(),
                 remarks);
 
-        // Save receiver transaction
         saveTransferTransaction(
                 receiver,
                 transactionReference,
@@ -154,7 +158,6 @@ public class TransactionServiceImpl implements TransactionService {
                 receiver.getBalance(),
                 remarks);
 
-        // Prepare response
         TransferResponseDTO response = new TransferResponseDTO();
 
         response.setTransactionReference(transactionReference);
@@ -189,6 +192,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @CircuitBreaker(name = "transactionService")
+    @Retry(name = "readRetry")
     public StatementResponseDTO getStatement(String accountNumber, LocalDate fromDate, LocalDate toDate, int page, int size) {
 
         BankAccount account = bankAccountRepository
@@ -202,7 +207,8 @@ public class TransactionServiceImpl implements TransactionService {
                 size,
                 Sort.by("transactionDate").descending());
 
-        Page<Transaction> transactions = transactionRepository.findByBankAccountAndTransactionDateBetween(account, fromDate.atStartOfDay(), toDate.atTime(LocalTime.MAX), pageable);
+        Page<Transaction> transactions = transactionRepository.findByBankAccountAndTransactionDateBetween(
+                account, fromDate.atStartOfDay(), toDate.atTime(LocalTime.MAX), pageable);
 
         List<TransactionResponseDTO> transactionDTOs =
                 transactions.getContent()
@@ -218,6 +224,4 @@ public class TransactionServiceImpl implements TransactionService {
 
         return responseDTO;
     }
-
-
 }

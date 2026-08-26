@@ -1,6 +1,9 @@
 package com.banking.demo.exceptions;
 
 import com.banking.demo.dtos.ErrorResponseDTO;
+import io.github.resilience4j.bulkhead.BulkheadFullException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -168,6 +171,53 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(response);
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponseDTO> handleServiceUnavailable(
+            ServiceUnavailableException ex,
+            HttpServletRequest request) {
+
+        ErrorResponseDTO response = buildErrorResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                ex.getMessage(),
+                request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+
+    @ExceptionHandler({
+            CallNotPermittedException.class,
+            RequestNotPermitted.class,
+            BulkheadFullException.class
+    })
+    public ResponseEntity<ErrorResponseDTO> handleResilienceLimits(
+            RuntimeException ex,
+            HttpServletRequest request) {
+
+        String message;
+        if (ex instanceof CallNotPermittedException) {
+            message = "Banking service circuit is open. Please retry in a few seconds.";
+        } else if (ex instanceof RequestNotPermitted) {
+            message = "Too many requests. Please slow down and try again.";
+        } else {
+            message = "Transfer capacity is full. Please try again shortly.";
+        }
+
+        ErrorResponseDTO response = buildErrorResponse(
+                HttpStatus.TOO_MANY_REQUESTS,
+                message,
+                request.getRequestURI());
+
+        // Circuit open is better as 503; rate/bulkhead as 429
+        HttpStatus status = ex instanceof CallNotPermittedException
+                ? HttpStatus.SERVICE_UNAVAILABLE
+                : HttpStatus.TOO_MANY_REQUESTS;
+
+        response.setStatus(status.value());
+        response.setError(status.getReasonPhrase());
+
+        return ResponseEntity.status(status).body(response);
     }
 
 
