@@ -7,4 +7,5 @@ public interface BankAccountService {
     BankAccount createAccount(CreateBankAccountRequestDTO request);
     DepositResponseDTO depositMoney(DepositRequestDTO request);
     WithdrawResponseDTO withdrawMoney(WithdrawRequestDTO request);
+    TransferResponseDTO transferMoney(TransferRequestDTO request);
 }
